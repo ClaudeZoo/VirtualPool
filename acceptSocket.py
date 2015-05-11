@@ -5,7 +5,7 @@ import re
 import Queue
 import operationQueue
 
-HOST = '101.5.209.97'
+HOST = '101.5.98.70'
 PORT = 23333
 USER_DICT = dict()
 RUNNING_QUEUE = dict()

@@ -3,13 +3,19 @@ __author__ = 'Claude'
 import MySQLdb
 
 
-db = MySQLdb.connect("localhost", "vm_manager", "thss&2014", "vms")
-cursor = db.cursor()
-sql_command = "test"
-cursor.execute(sql_command)
-results = cursor.fetchall()
-for row in results:
-    id = row[0]
-    name = row[1]
+def execute_sql(sql_command):
+    db = MySQLdb.connect("localhost", "vm_manager", "thss2014", "vms")
+    cursor = db.cursor()
+    try:
+        cursor.execute(sql_command)
+        db.commit()
+        results = cursor.fetchall()
+    except:
+        db.rollback()
+        results = "error"
+    db.close()
+    return results
 
-db.close()
+
+if __name__ == '__main__':
+    print execute_sql("SELECT * FROM vm_user")
