@@ -105,5 +105,5 @@ def control_vm(request):
         savestate_vm(reply_dict)
     elif control_type == "delete":
         delete_vm(reply_dict)
-    print reply_dict
+    print(reply_dict)
     send_socket.send_reply(reply_dict)

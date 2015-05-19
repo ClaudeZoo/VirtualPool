@@ -2,10 +2,11 @@ __author__ = 'Claude'
 
 import SocketServer
 import re
+import threading
 import Queue
 import operationQueue
 
-HOST = '101.5.98.70'
+HOST = '10.10.43.102'
 PORT = 23333
 USER_DICT = dict()
 RUNNING_QUEUE = dict()
@@ -43,10 +44,19 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
                     del USER_DICT[request_user]
 
 
-def start_server():
-    server = SocketServer.ThreadingTCPServer((HOST, PORT), MyTCPHandler)
-    server.serve_forever()
+class ServerThread(threading.Thread):
+    def run(self):
+        server = SocketServer.ThreadingTCPServer((HOST, PORT), MyTCPHandler)
+        server.serve_forever()
+
+
+class PrintThread(threading.Thread):
+    def run(self):
+        print("hello world")
 
 
 if __name__ == '__main__':
-    start_server()
+    thread1 = ServerThread()
+    thread2 = PrintThread()
+    thread1.start()
+    thread2.start()

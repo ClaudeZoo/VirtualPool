@@ -38,7 +38,8 @@ def new_vm(request):
         uuid_regex = re.compile(r'UUID="(\S*?)"')
         uuid_match = uuid_regex.search(get_uuid_tuple[0])
         uuid = uuid_match.group(1)
-        #print("success")
+        shared_folder_path = "/home/ubuntu-user/empty"
+        use_shell.shell('vboxmanage sharedfolder add %s --name %s --hostpath %s --readonly --automount' % (uuid, uuid ,shared_folder_path))
         insert_sql = "INSERT INTO vm_user \
                       (vm_uuid, vm_name, vm_type, vm_userid) \
                       VALUES ('%s', '%s', '%s', '%s')" % \
@@ -52,6 +53,6 @@ def new_vm(request):
         success_information = {"request_id": request_id, "request_type": request_type, "request_userid": user_id,
                                "vm_name": new_vm_name, "request_result": "success", "vm_username": "thucloud",
                                "vm_uuid": uuid_match.group(1)}
-        #print success_information
-        #send_socket.send_reply(success_information)
+        print(success_information)
+        send_socket.send_reply(success_information)
 

@@ -8,10 +8,11 @@ import datetime
 
 
 def update():
-    starttime = datetime.datetime.now()
     command = "vboxmanage list vms"
     return_tuple = operation.use_shell.shell(command)
     vm_regex = re.compile(r'"(.*?)"\s*\{(.*?)\}')
+
+    #将数据库中没有的虚拟机加入到数据库
     for match in vm_regex.finditer(return_tuple[0]):
         result = mysql.execute_sql("SELECT * FROM vm_user \
                           WHERE vm_uuid = '%s'" % (match.group(2)))
@@ -20,6 +21,7 @@ def update():
                       (vm_name, vm_uuid, vm_type) \
                       VALUES ('%s', '%s', '%s')" % (match.group(1), match.group(2), "nouser"))
 
+    #删除数据库中已经失效的虚拟机
     vm_list = mysql.execute_sql("SELECT * FROM vm_user")
     for line in vm_list:
         match = re.search(line[0], return_tuple[0])
@@ -31,10 +33,6 @@ def update():
             match = re.search(r'macaddress1="(.*?)"', vminfo_tuple[0])
             print match.group(1)
 
-
-    endtime = datetime.datetime.now()
-    print (endtime - starttime).seconds
-    #for line in results:
 
 
 if __name__ == '__main__':
