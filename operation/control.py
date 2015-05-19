@@ -31,7 +31,7 @@ def start_vm(reply_dict):
             time.sleep(10)
             while True:
                 ip = random.randint(1, 254)
-                ping_command = "ping 10.10.43.%s" % ip
+                ping_command = "ping 10.10.43.%s -c 1" % ip
                 ping_result = use_shell.shell(ping_command)
                 ping_regex = re.compile(r'(\d*)\sreceived')
                 ping_match = ping_regex.search(ping_result[0])
@@ -39,6 +39,7 @@ def start_vm(reply_dict):
                     change_network_command = "vboxmanage controlvm %s nic1 bridged eth1" % uuid
                     try:
                         use_shell.shell(change_network_command)
+                        use_shell.shell("rm '/home/njuptcloud/VmManager/operation/interfaces'")
                     except:
                         print("hehe")
 
@@ -53,17 +54,18 @@ def start_vm(reply_dict):
                     network_file.write('gateway 10.10.43.20\n')
                     network_file.write('netmask 255.255.255.0\n')
                     network_file.close()
-                    host_path = '/home/njuptcloud/VmManager/operation/interface'
+                    host_path = '/home/njuptcloud/VmManager/operation/interfaces'
                     guest_path = '/etc/network/interfaces'
                     username = 'root'
                     passwd = 'root'
                     try:
-                        use_shell.shell("vboxmanage guestcontrol %s copyto %s %s --username %s --password %s") % (host_path, guest_path, username, passwd)
+                        use_shell.shell("vboxmanage guestcontrol %s copyto %s %s --username %s --password %s" % (host_path, guest_path, username, passwd))
+                        use_shell.shell('vboxmanage guestcontrol %s exec --image /sbin/ifdown --username %s --password %s --wait-exit --wait-stdout -- eth0' % (uuid, username, passwd))
+                        time.sleep(2)
+                        use_shell.shell('vboxmanage guestcontrol %s exec --image /sbin/ifup --username %s --password %s --wait-exit --wait-stdout -- eth0' % (uuid, username, passwd))
                     except:
                         print('hehe2')
-                    use_shell.shell('vboxmanage guestcontrol %s exec --image /sbin/ifdown --username %s --password %s --wait-exit --wait-stdout -- eth0') % (uuid, username, passwd)
-                    time.sleep(2)
-                    use_shell.shell('vboxmanage guestcontrol %s exec --image /sbin/ifup --username %s --password %s --wait-exit --wait-stdout -- eth0') % (uuid, username, passwd)
+
                     break
                 else:
                     time.sleep(1)
