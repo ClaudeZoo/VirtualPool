@@ -22,7 +22,7 @@ def new_vm(request):
     user_id = request_dict["request_userid"]
     new_vm_name = random_str()
     #check if there is a same virtual machine
-    original_vm_name = 'ubuntu-server'
+    original_vm_name = 'ubuntu-sample'
     command = "vboxmanage clonevm %s --name %s --register" % (original_vm_name, new_vm_name)
 
     result_error_tuple = use_shell.shell(command)
@@ -40,6 +40,7 @@ def new_vm(request):
         uuid = uuid_match.group(1)
         shared_folder_path = "/home/ubuntu-user/empty"
         use_shell.shell('vboxmanage sharedfolder add %s --name %s --hostpath %s --readonly --automount' % (uuid, uuid ,shared_folder_path))
+        """
         insert_sql = "INSERT INTO vm_user \
                       (vm_uuid, vm_name, vm_type, vm_userid) \
                       VALUES ('%s', '%s', '%s', '%s')" % \
@@ -49,7 +50,7 @@ def new_vm(request):
             mysql.execute_sql("UPDATE vm_user\
                               SET vm_type='%s', vm_userid='%s'\
                               WHERE vm_uuid='%s'" % ("normal", user_id, uuid))
-
+        """
         success_information = {"request_id": request_id, "request_type": request_type, "request_userid": user_id,
                                "vm_name": new_vm_name, "request_result": "success", "vm_username": "thucloud",
                                "vm_uuid": uuid_match.group(1)}
