@@ -34,6 +34,8 @@ def start_vm(reply_dict):
                     break
                 else:
                     time.sleep(1)
+            #将网卡改成桥接模式
+            #分配IP
             reply_dict["request_result"] = "success"
             reply_dict["vm_ip"] = ip_match.group(1)
             reply_dict["vm_username"] = "username"
