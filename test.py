@@ -3,7 +3,8 @@ __author__ = 'Claude'
 import socket
 
 
-HOST = '10.10.43.102'
+
+HOST = '192.168.1.115'
 PORT = 23333
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST, PORT))

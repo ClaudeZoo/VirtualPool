@@ -6,8 +6,8 @@ import threading
 import Queue
 import operationQueue
 
-HOST = '10.10.43.102'
-PORT = 23333
+HOST = '10.0.0.120'
+PORT = 8776
 USER_DICT = dict()
 RUNNING_QUEUE = dict()
 
