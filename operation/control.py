@@ -2,9 +2,9 @@ __author__ = 'Claude'
 
 import re
 import use_shell
-import send_socket
 import time
 import mysql
+from send_socket import send_reply
 
 def get_vm_state(uuid):
     state_tuple = use_shell.shell("vboxmanage showvminfo %s --machinereadable" % uuid)
@@ -110,5 +110,6 @@ def control_vm(request):
         savestate_vm(reply_dict)
     elif control_type == "delete":
         delete_vm(reply_dict)
+        send_reply(reply_dict)
     print(reply_dict)
-    send_socket.send_reply(reply_dict)
+    return reply_dict

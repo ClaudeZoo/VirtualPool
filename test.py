@@ -4,7 +4,7 @@ import socket
 
 
 
-HOST = '192.168.1.115'
+HOST = '127.0.0.1'
 PORT = 23333
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST, PORT))

@@ -56,7 +56,7 @@ def new_vm_exec(reply_dict):
             uuid_match = uuid_regex.search(get_uuid_tuple[0])
             uuid = uuid_match.group(1)
             shared_folder_path = "/Users/Claude/Desktop/empty"
-            use_shell.shell('vboxmanage sharedfolder add %s --name %s --hostpath %s --readonly --automount' % (uuid, uuid ,shared_folder_path))
+            use_shell.shell('vboxmanage sharedfolder add %s --name %s --hostpath %s --readonly --automount' % (uuid, uuid,shared_folder_path))
             use_shell.shell('vboxmanage modifyvm %s --natpf1 "guestssh,tcp,,%s,,22"' % (uuid, port_number))
             insert_sql = "INSERT INTO vm_user \
                           (vm_uuid, vm_name, vm_type, vm_userid) \
@@ -70,7 +70,7 @@ def new_vm_exec(reply_dict):
 
             update_port_sql = "UPDATE ports \
                                 SET state='%s', owner='%s'\
-                                WHERE port='%s'" % ("occupied", new_vm_name, port_number)
+                                WHERE port='%s'" % ("occupied", uuid, port_number)
             mysql.execute_sql(update_port_sql)
 
             reply_dict["request_result"] = "success"
