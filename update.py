@@ -34,7 +34,6 @@ def update():
             print match.group(1)
 
 
-
 if __name__ == '__main__':
     while True:
         update()

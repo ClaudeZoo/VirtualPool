@@ -3,7 +3,7 @@ __author__ = 'Claude'
 import time
 import re
 import operation.new
-import operation.control
+from operation.control import control_vm
 import operation.modify
 
 
@@ -15,8 +15,7 @@ def resolve_request(request):
         operation.new.new_vm(request)
     elif request_type == "modify":
         operation.modify.modify_vm(request)
-    elif ((request_type == "start") or (request_type == "shutdown")
-          or (request_type == "savestate") or (request_type == "delete")):
-        operation.control.control_vm(request)
+    elif request_type == "delete":
+        control_vm(request)
     else:
         print "type_error"

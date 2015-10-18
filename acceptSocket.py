@@ -1,52 +1,59 @@
 __author__ = 'Claude'
 
 import SocketServer
-import re
 import threading
 import Queue
-import operationQueue
-
-HOST = '10.10.43.102'
-PORT = 23333
-USER_DICT = dict()
-RUNNING_QUEUE = dict()
+from operationQueue import de_queue
+from operation.control import control_vm
+from settings import MY_ADDRESS
+from settings import MY_PORT
 
 
 class MyTCPHandler(SocketServer.BaseRequestHandler):
-    
+    vm_set = set()
+    user_dict = dict()
+    running_queue_dict = dict()
+
     def handle(self):
 
         data = self.request.recv(1024).strip()
         data_dict = eval(data)
-
-        request_id = data_dict['request_id']
+        response = dict()
+        response['request_id'] = data_dict['request_id']
         request_type = data_dict['request_type']
         request_user = data_dict['request_userid']
-
-
-        response = dict()
-        response['request_id'] = request_id
         response['request_type'] = request_type
         response['request_userid'] = request_user
-        if request_user not in USER_DICT:
-            USER_DICT[request_user] = Queue.Queue(maxsize=10)
-        if USER_DICT[request_user].full():
-            response['request_response'] = "rejected"
-            self.request.sendall(str(response))
+        if request_type == 'new' or request_type == 'delete':
+            if request_user not in self.user_dict:
+                self.user_dict[request_user] = Queue.Queue(maxsize=20)
+            if self.user_dict[request_user].full():
+                response['request_response'] = "rejected"
+                self.request.sendall(str(response))
+            else:
+                self.user_dict[request_user].put(data)
+                response['request_response'] = "received"
+                self.request.sendall(str(response))
+                if request_user not in self.running_queue_dict:
+                    self.running_queue_dict[request_user] = "running"
+                    if de_queue(self.user_dict[request_user]) == "done":
+                        del self.running_queue_dict[request_user]
+                        del self.user_dict[request_user]
         else:
-            USER_DICT[request_user].put(data)
-            response['request_response'] = "received"
+            request_vm_uuid = data_dict['vm_uuid']
+            if request_vm_uuid in self.vm_set:
+                response['request_result'] = "rejected"
+                response['error_information'] = "An other operation is being executing"
+            else:
+                self.vm_set.add(request_vm_uuid)
+                response = control_vm(data)
+                self.vm_set.remove(request_vm_uuid)
             self.request.sendall(str(response))
-            if request_user not in RUNNING_QUEUE:
-                RUNNING_QUEUE[request_user] = "running"
-                if operationQueue.de_queue(USER_DICT[request_user]) == "done":
-                    del RUNNING_QUEUE[request_user]
-                    del USER_DICT[request_user]
 
 
 class ServerThread(threading.Thread):
     def run(self):
-        server = SocketServer.ThreadingTCPServer((HOST, PORT), MyTCPHandler)
+        server = SocketServer.ThreadingTCPServer((MY_ADDRESS, MY_PORT), MyTCPHandler)
         server.serve_forever()
 
 

@@ -4,7 +4,7 @@ import MySQLdb
 
 
 def execute_sql(sql_command):
-    db = MySQLdb.connect("localhost", "vm_manager", "thss2014", "vms")
+    db = MySQLdb.connect("localhost", "root", "wuzher1||", "vms")
     cursor = db.cursor()
     try:
         cursor.execute(sql_command)
@@ -18,4 +18,4 @@ def execute_sql(sql_command):
 
 
 if __name__ == '__main__':
-    print execute_sql("SELECT * FROM vm_user")
+    print(execute_sql("SELECT * FROM vm_user"))
