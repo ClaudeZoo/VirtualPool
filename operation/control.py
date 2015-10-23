@@ -132,6 +132,5 @@ def control_vm(request):
         delete_nat_rule(reply_dict)
     elif control_type == "delete":
         delete_vm(reply_dict)
-        send_reply(reply_dict)
     print(reply_dict)
     return reply_dict

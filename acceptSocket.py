@@ -24,7 +24,7 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         request_user = data_dict['request_userid']
         response['request_type'] = request_type
         response['request_userid'] = request_user
-        if request_type == 'new' or request_type == 'delete':
+        if request_type == 'new':
             if request_user not in self.user_dict:
                 self.user_dict[request_user] = Queue.Queue(maxsize=20)
             if self.user_dict[request_user].full():

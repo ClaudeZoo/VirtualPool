@@ -15,7 +15,5 @@ def resolve_request(request):
         operation.new.new_vm(request)
     elif request_type == "modify":
         operation.modify.modify_vm(request)
-    elif request_type == "delete":
-        control_vm(request)
     else:
         print "type_error"
