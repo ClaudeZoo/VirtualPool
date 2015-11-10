@@ -1,34 +1,19 @@
-__author__ = 'Claude'
-
+# coding:utf-8
 import re
+import string
+import random
 from operation.use_shell import shell
 import send_socket
-from random import Random
 from os import getcwd
 from os import path
-from mysql import execute_sql
 
 
-def random_str(random_length=8):
-    str = ''
-    chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789'
-    length = len(chars) - 1
-    random = Random()
-    for i in range(random_length):
-        str += chars[random.randint(0, length)]
-    return str
-
-
-def find_port():
-    check_port_sql = "SELECT * FROM ports WHERE state='free' LIMIT 1"
-    sql_result = execute_sql(check_port_sql)
-    if sql_result.__len__() != 0:
-        return sql_result[0]
-    else:
-        return 'empty'
+def random_str(random_length=8):  # 获取8位随机虚拟机名字
+    return ''.join(random.sample(string.ascii_letters + string.digits, random_length))
 
 
 def new_vm(request):
+    # 处理新建虚拟机请求,准备需要返回的基本数据
     request_dict = eval(request)
     reply_dict = {"request_id": request_dict["request_id"], "request_type": request_dict["request_type"],
                   "request_userid": request_dict["request_userid"], "port": request_dict["port"]}
@@ -39,12 +24,12 @@ def new_vm(request):
 
 def new_vm_exec(reply_dict):
     new_vm_name = random_str()
-    #check if there is a same virtual machine
+    # check if there is a same virtual machine
     original_vm_name = 'ubuntu-sample'
     command = "vboxmanage clonevm %s --name %s --register" % (original_vm_name, new_vm_name)
     result_error_tuple = shell(command)
 
-    if result_error_tuple[1] != None:
+    if result_error_tuple[1] != None:  # 如果返回错误结果
         reply_dict["request_result"] = "execution_error"
         reply_dict["error_information"] = result_error_tuple[1]
 
@@ -57,7 +42,9 @@ def new_vm_exec(reply_dict):
         uuid = uuid_match.group(1)
         folder_path = path.join(getcwd(), 'empty')
         port = reply_dict["port"]
-        shell('vboxmanage sharedfolder add %s --name %s --hostpath %s --readonly --automount' % (uuid, uuid, folder_path))
+        # 获取虚拟机的uuid并在虚拟机内新建一个同名文件夹,便于iDashBoard Client获取uuid
+        shell('vboxmanage sharedfolder add %s --name %s --hostpath %s --readonly --automount'
+              % (uuid, uuid, folder_path))
         shell('vboxmanage modifyvm %s --natpf1 "guestssh,tcp,,%s,,22"' % (uuid, port))
         reply_dict["request_result"] = "success"
         reply_dict["vm_name"] = new_vm_name

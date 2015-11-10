@@ -1,5 +1,3 @@
-__author__ = 'Claude'
-
 from vmController import resolve_request
 
 

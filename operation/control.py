@@ -1,11 +1,7 @@
-__author__ = 'Claude'
-
+# coding:utf-8
 import re
 from use_shell import shell
 import time
-import mysql
-from send_socket import send_reply
-from mysql import execute_sql
 
 
 def get_vm_state(uuid):
@@ -16,7 +12,17 @@ def get_vm_state(uuid):
         return match.group(1)
 
 
+def execute_command(command, reply_dict):
+    std_tuple = shell(command)
+    if std_tuple[1] != None:
+        reply_dict["request_result"] = "execution_error"
+        reply_dict["error_information"] = std_tuple[1]
+    else:
+        reply_dict["request_result"] = "success"
+
+
 def start_vm(reply_dict):
+    # 启动虚拟机
     uuid = reply_dict["vm_uuid"]
     vm_state = get_vm_state(uuid)
     if (vm_state != 'running') and (vm_state != 'paused'):
@@ -30,7 +36,6 @@ def start_vm(reply_dict):
             get_ip_tuple = shell(get_ip_command)
             ip_regex = re.compile(r'Net/0/V4/IP, value: (\S*),')
             ip_match = ip_regex.search(get_ip_tuple[0])
-            time.sleep(10)
             while True:
                 get_ip_tuple = shell(get_ip_command)
                 ip_match = ip_regex.search(get_ip_tuple[0])
@@ -47,53 +52,42 @@ def start_vm(reply_dict):
 
 
 def shutdown_vm(reply_dict):
+    # 关闭虚拟机
     uuid = reply_dict["vm_uuid"]
     vm_state = get_vm_state(uuid)
     if (vm_state == 'running') or (vm_state == 'paused'):
         command = "vboxmanage controlvm %s acpipowerbutton" % uuid
-        stdout_stderr_tuple = shell(command)
-        if stdout_stderr_tuple[1] != None:
-            reply_dict["request_result"] = "execution_error"
-            reply_dict["error_information"] = stdout_stderr_tuple[1]
-        else:
-            reply_dict["request_result"] = "success"
+        execute_command(command, reply_dict)
     else:
         reply_dict["request_result"] = "request_error"
         reply_dict["error_information"] = "Virtual machine in invalid state: %s" % vm_state
 
 
 def savestate_vm(reply_dict):
+    # 休眠虚拟机
     uuid = reply_dict["vm_uuid"]
     vm_state = get_vm_state(uuid)
     if (vm_state == 'running') or (vm_state == 'paused'):
         command = "vboxmanage controlvm %s savestate" % uuid
-        stdout_stderr_tuple = shell(command)
-        if stdout_stderr_tuple[1] != None:
-            reply_dict["request_result"] = "execution_error"
-            reply_dict["error_information"] = stdout_stderr_tuple[1]
-        else:
-            reply_dict["request_result"] = "success"
+        execute_command(command, reply_dict)
     else:
         reply_dict["request_result"] = "request_error"
         reply_dict["error_information"] = "Virtual machine in invalid state: %s" % vm_state
 
 
-def add_nat_rule(reply_dict, request_dict):
+def add_nat_rule(reply_dict):
+    # 添加nat规则
     uuid = reply_dict["vm_uuid"]
-    host_port = request_dict["host_port"]
-    guest_port = request_dict["guest_port"]
-    protocol = request_dict["protocol"]
+    host_port = reply_dict["host_port"]
+    guest_port = reply_dict["guest_port"]
+    protocol = reply_dict["protocol"]
     rule_name = str(host_port) + protocol + str(guest_port)
-    std_tuple = shell("vboxmanage controlvm %s natpf1 %s,%s,,%s,,%s" %
-                     (uuid, rule_name, protocol, host_port, guest_port))
-    if std_tuple[1] != None:
-        reply_dict["request_result"] = "execution_error"
-        reply_dict["error_information"] = std_tuple[1]
-    else:
-        reply_dict["request_result"] = "success"
+    command = "vboxmanage controlvm %s natpf1 %s,%s,,%s,,%s" % (uuid, rule_name, protocol, host_port, guest_port)
+    execute_command(command, reply_dict)
 
 
 def delete_nat_rule(reply_dict):
+    # to do
     uuid = reply_dict["vm_uuid"]
     rule_name = reply_dict["rule_name"]
 
@@ -103,23 +97,15 @@ def delete_vm(reply_dict):
     vm_state = get_vm_state(uuid)
     if (vm_state != 'running') and (vm_state != 'paused'):
         command = "vboxmanage unregistervm %s --delete" % uuid
-        stdout_stderr_tuple = shell(command)
-        if stdout_stderr_tuple[1] != None:
-            reply_dict["request_result"] = "execution_error"
-            reply_dict["error_information"] = stdout_stderr_tuple[1]
-        else:
-            reply_dict["request_result"] = "success"
+        execute_command(command, reply_dict)
     else:
         reply_dict["request_result"] = "request_error"
         reply_dict["error_information"] = "Virtual machine in invalid state: %s" % vm_state
 
 
 def control_vm(request):
-    request_dict = eval(request)
-    reply_dict = {"request_id": request_dict["request_id"], "request_type": request_dict["request_type"],
-                  "request_userid": request_dict["request_userid"], "vm_name": request_dict["vm_name"],
-                  "vm_uuid": request_dict["vm_uuid"]}
-    control_type = request_dict["request_type"]
+    reply_dict = eval(request)
+    control_type = reply_dict["request_type"]
     if control_type == "start":
         start_vm(reply_dict)
     elif control_type == "shutdown":
@@ -127,7 +113,7 @@ def control_vm(request):
     elif control_type == "savestate":
         savestate_vm(reply_dict)
     elif control_type == "add_nat_rule":
-        add_nat_rule(reply_dict, request_dict)
+        add_nat_rule(reply_dict)
     elif control_type == "delete_nat_rule":
         delete_nat_rule(reply_dict)
     elif control_type == "delete":

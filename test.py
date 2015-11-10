@@ -1,8 +1,8 @@
+#coding:utf-8
 __author__ = 'Claude'
-
 import socket
-
-
+#测试文件
+#可模拟iDashBoard发送消息来测试VmManager
 
 HOST = '127.0.0.1'
 PORT = 23333

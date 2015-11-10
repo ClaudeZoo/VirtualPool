@@ -1,11 +1,11 @@
-__author__ = 'Claude'
-
+# coding:utf-8
 import re
 import use_shell
 import send_socket
 
 
 def modify_vm(request):
+    # 修改虚拟机配置
     request_dict = eval(request)
     request_id = request_dict["request_id"]
     request_type = request_dict["request_type"]
@@ -21,9 +21,10 @@ def modify_vm(request):
         if modify_tuple[1] == "None":
             error_information = {"request_id": request_id, "request_type": request_type, "request_userid": request_userid,
                              "request_result": "execution_error", "error_information": modify_tuple[1]}
-            print error_information
+            print(error_information)
             send_socket.send_reply(error_information)
         else:
-            success_information = {"request_id": request_id, "request_type": request_type, "user_id":request_userid, "request_result": "success", "vm_name":vm_name, "vm_uuid":vm_uuid,
-        "property": vm_property, "property_value": property_value}
+            success_information = {"request_id": request_id, "request_type": request_type, "user_id": request_userid,
+                                   "request_result": "success", "vm_name":vm_name, "vm_uuid":vm_uuid,
+                                   "property": vm_property, "property_value": property_value}
             send_socket.send_reply(success_information)
