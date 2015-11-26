@@ -16,7 +16,8 @@ def new_vm(request):
     # 处理新建虚拟机请求,准备需要返回的基本数据
     request_dict = eval(request)
     reply_dict = {"request_id": request_dict["request_id"], "request_type": request_dict["request_type"],
-                  "request_userid": request_dict["request_userid"], "port": request_dict["port"]}
+                  "request_userid": request_dict["request_userid"], "port": request_dict["port"], 
+                  "request_memory":request_dict["request_memory"]}
     new_vm_exec(reply_dict)
     print(reply_dict)
     send_socket.send_reply(reply_dict)
@@ -35,6 +36,8 @@ def new_vm_exec(reply_dict):
 
     else:
         print(result_error_tuple[0])
+        modify_command = "vboxmanage modifyvm %s --memory %s" % (new_vm_name, str(reply_dict['request_memory']))
+        shell(modify_command)
         get_uuid_command = "vboxmanage showvminfo %s --machinereadable" % new_vm_name
         get_uuid_tuple = shell(get_uuid_command)
         uuid_regex = re.compile(r'UUID="(\S*?)"')
