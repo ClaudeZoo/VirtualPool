@@ -2,7 +2,9 @@
 import re
 import use_shell
 import send_socket
-
+def modify_vm_memory(name, memory):
+    modify_command = "vboxmanage modifyvm %s --memory %s" % (name, str(memory))
+    use_shell.shell(modify_command)
 
 def modify_vm(request):
     # 修改虚拟机配置
