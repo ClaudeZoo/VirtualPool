@@ -3,6 +3,7 @@ import re
 import string
 import random
 from operation.use_shell import shell
+from operation.modify import modify_vm_memory
 import send_socket
 from os import getcwd
 from os import path
@@ -35,9 +36,7 @@ def new_vm_exec(reply_dict):
         reply_dict["error_information"] = result_error_tuple[1]
 
     else:
-        print(result_error_tuple[0])
-        modify_command = "vboxmanage modifyvm %s --memory %s" % (new_vm_name, str(reply_dict['request_memory']))
-        shell(modify_command)
+        modify_vm_memory(new_vm_name, reply_dict['request_memory'])
         get_uuid_command = "vboxmanage showvminfo %s --machinereadable" % new_vm_name
         get_uuid_tuple = shell(get_uuid_command)
         uuid_regex = re.compile(r'UUID="(\S*?)"')
