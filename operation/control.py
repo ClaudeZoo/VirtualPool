@@ -2,6 +2,8 @@
 import re
 from use_shell import shell
 import time
+from threading import Thread, Timer
+from os import getcwd, path
 
 
 def get_vm_state(uuid):
@@ -27,6 +29,7 @@ def start_vm(reply_dict):
     vm_state = get_vm_state(uuid)
     if (vm_state != 'running') and (vm_state != 'paused'):
         command = "vboxmanage startvm %s --type headless" % uuid
+        MonitorThread.run()
         stdout_stderr_tuple = shell(command)
         if stdout_stderr_tuple[1] != None:
             reply_dict["request_result"] = "execution_error"
@@ -49,6 +52,28 @@ def start_vm(reply_dict):
     else:
         reply_dict["request_result"] = "request_error"
         reply_dict["error_information"] = "The virtual machine is already running"
+
+
+class MonitorThread(Thread):
+    # 监控进程
+    def __init__(self, vm_uuid):
+        Thread.__init__(self)
+        self.vm_uuid = vm_uuid
+        self.pid = 0
+
+    def run(self):
+        command = "ps aux | grep %s | tail -1 | grep startvm | awk '{print $2}'" % self.vm_uuid
+        while True:
+            pid_tuple = shell(command)
+            if pid_tuple[0]:
+                self.pid = int(pid_tuple[0])
+                break
+        for i in range(0, 300):
+            Timer(0.1, self.write_log()).run()
+
+    def write_log(self):
+        command = 'cat /proc/%s/statm >> %s' % (self.pid, path.join(getcwd(), '%s.txt' % self.pid))
+        shell(command)
 
 
 def shutdown_vm(reply_dict):
