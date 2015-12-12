@@ -28,30 +28,15 @@ def start_vm(reply_dict):
     uuid = reply_dict["vm_uuid"]
     vm_state = get_vm_state(uuid)
     if (vm_state != 'running') and (vm_state != 'paused'):
+        command = "vboxmanage startvm %s --type headless" % uuid
+        stdout_stderr_tuple = shell(command)
         m_thread = MonitorThread(uuid)
         m_thread.run()
-        s_thread = StartThread(reply_dict, uuid)
-        reply_dict = s_thread.run()
-    else:
-        reply_dict["request_result"] = "request_error"
-        reply_dict["error_information"] = "The virtual machine is already running"
-
-
-class StartThread(Thread):
-
-    def __init__(self, reply_dict, uuid):
-        Thread.__init__(self)
-        self.reply_dict = reply_dict
-        self.uuid = uuid
-
-    def run(self):
-        command = "vboxmanage startvm %s --type headless" % self.uuid
-        stdout_stderr_tuple = shell(command)
-        if stdout_stderr_tuple[1] != None:
-            self.reply_dict["request_result"] = "execution_error"
-            self.reply_dict["error_information"] = stdout_stderr_tuple[1]
+        if stdout_stderr_tuple[1]:
+            reply_dict["request_result"] = "execution_error"
+            reply_dict["error_information"] = stdout_stderr_tuple[1]
         else:
-            get_ip_command = "vboxmanage guestproperty enumerate %s" % self.uuid
+            get_ip_command = "vboxmanage guestproperty enumerate %s" % uuid
             get_ip_tuple = shell(get_ip_command)
             ip_regex = re.compile(r'Net/0/V4/IP, value: (\S*),')
             ip_match = ip_regex.search(get_ip_tuple[0])
@@ -62,10 +47,14 @@ class StartThread(Thread):
                     break
                 else:
                     time.sleep(1)
-            self.reply_dict["request_result"] = "success"
-            self.reply_dict["vm_ip"] = ip_match.group(1)
-            self.reply_dict["vm_username"] = "username"
-        return self.reply_dict
+            reply_dict["request_result"] = "success"
+            reply_dict["vm_ip"] = ip_match.group(1)
+            reply_dict["vm_username"] = "username"
+    else:
+        reply_dict["request_result"] = "request_error"
+        reply_dict["error_information"] = "The virtual machine is already running"
+
+
 
 
 class MonitorThread(Thread):
@@ -77,11 +66,9 @@ class MonitorThread(Thread):
 
     def run(self):
         command = "ps aux | grep %s | tail -1 | grep startvm | awk '{print $2}'" % self.vm_uuid
-        while True:
-            pid_tuple = shell(command)
-            if pid_tuple[0]:
-                self.pid = int(pid_tuple[0])
-                break
+        pid_tuple = shell(command)
+        if pid_tuple[0]:
+            self.pid = int(pid_tuple[0])
         for i in range(0, 300):
             Timer(0.1, self.write_log).run()
 
