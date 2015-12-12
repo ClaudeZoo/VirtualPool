@@ -65,16 +65,19 @@ class MonitorThread(Thread):
         self.pid = 0
 
     def run(self):
-        command = "ps aux | grep %s | tail -1 | grep startvm | awk '{print $2}'" % self.vm_uuid
+        command = "ps aux | grep %s | head -1 | awk '{print $2}'" % self.vm_uuid
         pid_tuple = shell(command)
+        print(pid_tuple[0])
         if pid_tuple[0]:
             self.pid = int(pid_tuple[0])
         for i in range(0, 300):
-            Timer(0.1, self.write_log).run()
+            Timer(0.2, self.write_log).run()
 
     def write_log(self):
-        command = 'cat /proc/%s/statm >> %s' % (self.pid, path.join(getcwd(), '%s.txt' % self.pid))
+        command = 'cat /proc/%s/statm >> %s' % (self.pid, path.join(getcwd(), '%s-%s-m.txt' % (self.vm_uuid[:8], self.pid)))
+        command_2 = 'cat /proc/%s/stat >> %s' % (self.pid, path.join(getcwd(), '%s-%s.txt' % (self.vm_uuid[:8], self.pid)))
         shell(command)
+        shell(command_2)
 
 
 def shutdown_vm(reply_dict):
