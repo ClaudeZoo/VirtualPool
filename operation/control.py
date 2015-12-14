@@ -36,23 +36,30 @@ def start_vm(reply_dict):
             reply_dict["request_result"] = "execution_error"
             reply_dict["error_information"] = stdout_stderr_tuple[1]
         else:
-            get_ip_command = "vboxmanage guestproperty enumerate %s" % uuid
-            get_ip_tuple = shell(get_ip_command)
-            ip_regex = re.compile(r'Net/0/V4/IP, value: (\S*),')
-            ip_match = ip_regex.search(get_ip_tuple[0])
-            while True:
-                get_ip_tuple = shell(get_ip_command)
-                ip_match = ip_regex.search(get_ip_tuple[0])
-                if ip_match:
-                    break
-                else:
-                    time.sleep(1)
             reply_dict["request_result"] = "success"
-            reply_dict["vm_ip"] = ip_match.group(1)
-            reply_dict["vm_username"] = "username"
+            reply_dict["error_information"] = ""
+            return reply_dict
     else:
         reply_dict["request_result"] = "request_error"
         reply_dict["error_information"] = "The virtual machine is already running"
+
+
+def start_end_vm(reply_dict):
+    uuid = reply_dict["vm_uuid"]
+    get_ip_command = "vboxmanage guestproperty enumerate %s" % uuid
+    get_ip_tuple = shell(get_ip_command)
+    ip_regex = re.compile(r'Net/0/V4/IP, value: (\S*),')
+    ip_match = ip_regex.search(get_ip_tuple[0])
+    while True:
+        get_ip_tuple = shell(get_ip_command)
+        ip_match = ip_regex.search(get_ip_tuple[0])
+        if ip_match:
+            break
+        else:
+            time.sleep(1)
+    reply_dict["request_result"] = "success"
+    reply_dict["vm_ip"] = ip_match.group(1)
+    reply_dict["vm_username"] = "username"
 
 
 
@@ -137,6 +144,8 @@ def control_vm(request):
     control_type = reply_dict["request_type"]
     if control_type == "start":
         start_vm(reply_dict)
+    elif control_type == "start_end":
+        start_end_vm(reply_dict)
     elif control_type == "shutdown":
         shutdown_vm(reply_dict)
     elif control_type == "savestate":
