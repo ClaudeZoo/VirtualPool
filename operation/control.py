@@ -31,7 +31,7 @@ def start_vm(reply_dict):
         command = "vboxmanage startvm %s --type headless" % uuid
         stdout_stderr_tuple = shell(command)
         m_thread = MonitorThread(uuid)
-        m_thread.run()
+        m_thread.start()
         if stdout_stderr_tuple[1]:
             reply_dict["request_result"] = "execution_error"
             reply_dict["error_information"] = stdout_stderr_tuple[1]
@@ -60,8 +60,6 @@ def start_end_vm(reply_dict):
     reply_dict["request_result"] = "success"
     reply_dict["vm_ip"] = ip_match.group(1)
     reply_dict["vm_username"] = "username"
-
-
 
 
 class MonitorThread(Thread):
