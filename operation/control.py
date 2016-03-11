@@ -62,19 +62,21 @@ def start_end_vm(reply_dict):
     reply_dict["vm_username"] = "username"
 
 
+def get_vm_pid(uuid):
+    command = "ps aux | grep %s | head -1 | awk '{print $2}'" % uuid
+    pid_tuple = shell(command)
+    if pid_tuple[0]:
+        return int(pid_tuple[0])
+
+
 class MonitorThread(Thread):
     # 监控进程
     def __init__(self, vm_uuid):
         Thread.__init__(self)
         self.vm_uuid = vm_uuid
-        self.pid = 0
+        self.pid = get_vm_pid(self.vm_uuid)
 
     def run(self):
-        command = "ps aux | grep %s | head -1 | awk '{print $2}'" % self.vm_uuid
-        pid_tuple = shell(command)
-        print(pid_tuple[0])
-        if pid_tuple[0]:
-            self.pid = int(pid_tuple[0])
         for i in range(0, 300):
             Timer(0.2, self.write_log).run()
 
@@ -83,6 +85,17 @@ class MonitorThread(Thread):
         command_2 = 'cat /proc/%s/stat >> %s' % (self.pid, path.join(getcwd(), '%s-%s.txt' % (self.vm_uuid[:8], self.pid)))
         shell(command)
         shell(command_2)
+
+
+class AnalyseThread(Thread):
+    # 分析进程
+    def __init__(self, vm_uuid):
+        Thread.__init__(self)
+        self.vm_uuid = vm_uuid
+        self.pid = get_vm_pid(self.vm_uuid)
+
+    def run(self):
+        return None
 
 
 def shutdown_vm(reply_dict):
