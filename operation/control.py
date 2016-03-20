@@ -33,8 +33,6 @@ def start_vm(reply_dict):
             reply_dict["error_information"] = stdout_stderr_tuple[1]
         else:
             reply_dict["request_result"] = "success"
-            reply_dict["error_information"] = ""
-            return reply_dict
     else:
         reply_dict["request_result"] = "request_error"
         reply_dict["error_information"] = "The virtual machine is already running"
