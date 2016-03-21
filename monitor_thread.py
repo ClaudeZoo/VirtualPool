@@ -16,12 +16,12 @@ class MonitorTCPHandler(SocketServer.BaseRequestHandler):
         if 'type' in request_dict and 'vm_uuid' in request_dict:
             if request_dict['type'] == "start":
                 if 'vm_uuid' in request_dict:
-                    #log_thread = LogThread(request_dict['vm_uuid'])
-                    #self.thread_set.add(request_dict['vm_uuid'])
-                    #log_thread.start()
+                    self.thread_set.add(request_dict['vm_uuid'])
+                    log_thread = LogThread(request_dict['vm_uuid'], self.thread_set)
+                    log_thread.start()
                     self.request.sendall(str(dict(result='success')))
             elif request_dict['type'] == "end":
-                self.thread_set.remove()
+                self.thread_set.remove(request_dict['vm_uuid'])
                 self.request.sendall(str(dict(result='success')))
             elif request_dict['type'] == "query":
                 pass
@@ -39,27 +39,28 @@ class MonitorThread(Thread):
         super(MonitorThread, self).__init__()
         self.tcp_server = SocketServer.ThreadingTCPServer((MY_IP, MONITOR_PORT), MonitorTCPHandler)
 
+    def run(self):
+        self.tcp_server.serve_forever()
+
 
 class LogThread(Thread):
 
     def __init__(self, vm_uuid, thread_set):
         super(LogThread, self).__init__()
         self.vm_uuid = vm_uuid
-        self.pid = 1234
+        self.pid = get_vm_pid(self.vm_uuid)
         self.thread_set = thread_set
         self.log_file_name = path.join(getcwd(), '%s-%s.txt' % (self.vm_uuid[:8], self.pid))
-        self.command_test = 'echo "test" >> %s' % self.log_file_name
-        self.command = 'cat /proc/%s/statm | cut -d ' ' -f 1,2,3,6 >> %s' % (self.pid, self.log_file_name)
-        self.command_2 = 'cat /proc/%s/stat | cut -d ' ' -f 10,14,15 >> %s' % (self.pid, self.log_file_name)
+        self.command = 'cat /proc/%s/statm | cut -d ' ' -f 1,2,3,6' % self.pid
+        self.command_2 = 'cat /proc/%s/stat | cut -d ' ' -f 10,14,15' % self.pid
 
     def run(self):
         while self.vm_uuid in self.thread_set:
             Timer(0.2, self.write_log).run()
 
     def write_log(self):
-        shell(self.command_test)
-        #shell(self.command)
-        #shell(self.command_2)
+        data = shell(self.command)[0] + ' ' + shell(self.command_2)[0]
+        shell('echo %s >> %s' % (data, self.log_file_name))
 
 
 def get_vm_pid(uuid):
