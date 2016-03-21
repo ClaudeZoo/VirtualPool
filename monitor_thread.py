@@ -51,15 +51,15 @@ class LogThread(Thread):
         self.pid = get_vm_pid(self.vm_uuid)
         self.thread_set = thread_set
         self.log_file_name = path.join(getcwd(), '%s-%s.txt' % (self.vm_uuid[:8], self.pid))
-        self.command = 'cat /proc/%s/statm | cut -d ' ' -f 1,2,3,6' % self.pid
-        self.command_2 = 'cat /proc/%s/stat | cut -d ' ' -f 10,14,15' % self.pid
+        self.command = 'cat /proc/%s/statm | cut -d " " -f 1,2,3,6' % self.pid
+        self.command_2 = 'cat /proc/%s/stat | cut -d " " -f 10,14,15' % self.pid
 
     def run(self):
         while self.vm_uuid in self.thread_set:
-            Timer(0.2, self.write_log).run()
+            Timer(0.1, self.write_log).run()
 
     def write_log(self):
-        data = shell(self.command)[0] + ' ' + shell(self.command_2)[0]
+        data = shell(self.command)[0].strip('\n') + ' ' + shell(self.command_2)[0].strip('\n')
         shell('echo %s >> %s' % (data, self.log_file_name))
 
 
