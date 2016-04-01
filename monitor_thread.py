@@ -1,10 +1,12 @@
 # coding:utf-8
 import SocketServer
+import pickle
+import numpy as np
+from sknn.mlp import Regressor, Layer
 from threading import Thread, Timer
 from os import getcwd, path
 from operation.use_shell import shell
-from settings import MY_IP
-from settings import MONITOR_PORT
+from settings import MY_IP, MONITOR_PORT, MODAL_NAME
 
 
 class MonitorTCPHandler(SocketServer.BaseRequestHandler):
@@ -14,23 +16,46 @@ class MonitorTCPHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         request_dict = eval(self.request.recv(1024).strip())
         if 'type' in request_dict and 'vm_uuid' in request_dict:
+            print request_dict
             if request_dict['type'] == "start":
                 if 'vm_uuid' in request_dict:
                     self.thread_set.add(request_dict['vm_uuid'])
-                    log_thread = LogThread(request_dict['vm_uuid'], self.thread_set)
+                    self.pid = get_vm_pid(request_dict['vm_uuid'])
+                    log_thread = LogThread(request_dict['vm_uuid'], self.thread_set, self.pid)
                     log_thread.start()
-                    self.request.sendall(str(dict(result='success')))
+                    
             elif request_dict['type'] == "end":
                 self.thread_set.remove(request_dict['vm_uuid'])
                 self.request.sendall(str(dict(result='success')))
             elif request_dict['type'] == "query":
-                pass
+                if 'vm_uuid' in request_dict:
+                    if path.exists(MODAL_NAME):
+                        model_file = file(MODAL_NAME, "rb")
+                        model_str = pickle.load(model_file)
+                        neural_network = pickle.loads(model_str)
+                    else:
+                        neural_network = {}
+                    if neural_network != {}:
+                        data_file_name = '%s-%s.txt' % (request_dict['vm_uuid'][:8], get_vm_pid(request_dict['vm_uuid']))
+                        print data_file_name
+                        if path.exists(data_file_name):
+                            data_file = np.loadtxt(data_file_name, int)
+                            last_line_data = data_file[-1:]
+                            print last_line_data
+                            result = neural_network.predict(last_line_data)
+                            self.request.sendall(str(dict(result='success', process=result[0][0])))
+                        else:
+                            self.request.sendall(str(dict(result='cannot find the log.')))
+                    else:
+                        self.request.sendall(str(dict(result='model file not found')))
+                else:
+                    self.request.sendall(str(dict(result='Invalid request')))
             else:
-                pass
+                response_dict = dict(result="Invalid type")
+                self.request.sendall(str(response_dict))
         else:
-            pass
-        response_dict = dict(result="illegal")
-        self.request.sendall(str(response_dict))
+            response_dict = dict(result="illegal")
+            self.request.sendall(str(response_dict))
 
 
 class MonitorThread(Thread):
@@ -45,10 +70,10 @@ class MonitorThread(Thread):
 
 class LogThread(Thread):
 
-    def __init__(self, vm_uuid, thread_set):
+    def __init__(self, vm_uuid, thread_set, pid):
         super(LogThread, self).__init__()
         self.vm_uuid = vm_uuid
-        self.pid = get_vm_pid(self.vm_uuid)
+        self.pid = pid
         self.thread_set = thread_set
         self.log_file_name = path.join(getcwd(), '%s-%s.txt' % (self.vm_uuid[:8], self.pid))
         self.command = 'cat /proc/%s/statm | cut -d " " -f 1,2,3,6' % self.pid
@@ -72,10 +97,14 @@ def get_vm_pid(uuid):
 
 class AnalyseThread(Thread):
     # 分析进程
-    def __init__(self, vm_uuid):
+    def __init__(self, neural_network, data, request):
         Thread.__init__(self)
-        self.vm_uuid = vm_uuid
-        self.pid = get_vm_pid(self.vm_uuid)
+        self.neural_network = neural_network
+        self.data = data
+        self.handle_request = request
 
     def run(self):
-        return None
+        print 1
+        result = self.neural_network.predict(self.data)
+        print 2
+        self.handle_request.sendall(str(dict(result='success', process=result[0][0])))
