@@ -2,7 +2,8 @@
 import SocketServer
 import pickle
 import numpy as np
-from sknn.mlp import Regressor, Layer
+from pybrain.datasets import SupervisedDataSet
+from pybrain.supervised.trainers import BackpropTrainer
 from threading import Thread, Timer
 from os import getcwd, path
 from operation.use_shell import shell
@@ -40,10 +41,10 @@ class MonitorTCPHandler(SocketServer.BaseRequestHandler):
                         print data_file_name
                         if path.exists(data_file_name):
                             data_file = np.loadtxt(data_file_name, int)
-                            last_line_data = data_file[-1:]
+                            last_line_data = data_file[-1]
                             print last_line_data
-                            result = neural_network.predict(last_line_data)
-                            self.request.sendall(str(dict(result='success', process=result[0][0])))
+                            result = neural_network.activate(last_line_data)
+                            self.request.sendall(str(dict(result='success', process=result[0])))
                         else:
                             self.request.sendall(str(dict(result='cannot find the log.')))
                     else:
