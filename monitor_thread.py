@@ -2,6 +2,7 @@
 import SocketServer
 import pickle
 import numpy as np
+import os
 from threading import Thread, Timer
 from os import getcwd, path
 from operation.use_shell import shell
@@ -81,6 +82,7 @@ class LogThread(Thread):
     def run(self):
         while self.vm_uuid in self.thread_set:
             Timer(0.1, self.write_log).run()
+        os.remove(self.log_file_name)
 
     def write_log(self):
         data = shell(self.command)[0].strip('\n') + ' ' + shell(self.command_2)[0].strip('\n')
