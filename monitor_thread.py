@@ -2,8 +2,6 @@
 import SocketServer
 import pickle
 import numpy as np
-from pybrain.datasets import SupervisedDataSet
-from pybrain.supervised.trainers import BackpropTrainer
 from threading import Thread, Timer
 from os import getcwd, path
 from operation.use_shell import shell
