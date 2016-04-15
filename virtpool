@@ -1,0 +1,19 @@
+#! /usr/bin/env python
+# coding:utf-8
+from control_thread import ControlThread
+from monitor_thread import MonitorThread
+
+
+if __name__ == '__main__':
+    # 程序入口
+    control_thread = ControlThread()
+    monitor_thread = MonitorThread()
+    control_thread.setDaemon(True)
+    monitor_thread.setDaemon(True)
+    control_thread.start()
+    monitor_thread.start()
+    try:
+        while control_thread.isAlive() or monitor_thread.isAlive():
+            pass
+    except KeyboardInterrupt:
+        print('stopped by keyboard')

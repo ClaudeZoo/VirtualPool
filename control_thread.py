@@ -4,11 +4,11 @@ import threading
 import Queue
 from operationQueue import de_queue
 from operation.control import control_vm
-from settings import MY_ADDRESS
-from settings import MY_PORT
+from settings import MY_IP
+from settings import CONTROL_PORT
 
 
-class MyTCPHandler(SocketServer.BaseRequestHandler):
+class ControlTCPHandler(SocketServer.BaseRequestHandler):
     # 继承BaseRequestHandler类, 监听端口并处理请求
     vm_set = set()
     user_dict = dict()
@@ -50,21 +50,10 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
             self.request.sendall(str(response))
 
 
-class ServerThread(threading.Thread):
+class ControlThread(threading.Thread):
+    def __init__(self):
+        super(ControlThread, self).__init__()
+        self.tcp_server = SocketServer.ThreadingTCPServer((MY_IP, CONTROL_PORT), ControlTCPHandler)
+
     def run(self):
-        server = SocketServer.ThreadingTCPServer((MY_ADDRESS, MY_PORT), MyTCPHandler)
-        server.serve_forever()
-
-
-class PrintThread(threading.Thread):
-    # 测试多线程
-    def run(self):
-        print("hello world")
-
-
-if __name__ == '__main__':
-    # 程序入口
-    thread1 = ServerThread()
-    thread2 = PrintThread()
-    thread1.start()
-    thread2.start()
+        self.tcp_server.serve_forever()
