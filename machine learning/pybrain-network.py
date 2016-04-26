@@ -20,8 +20,8 @@ def output_model(ds, model_name, input_len, output_len):
 
 def file_train(filename, model_name):
     data = np.loadtxt(filename, float)
-    input_info = data[0:][..., 0:-1]
-    target = data[0:][..., [-1]]
+    input_info = data[1:][..., 0:-1]
+    target = data[1:][..., [-1]]
     input_len = len(input_info[0])
     output_len = 1
     data_num = len(input_info)
@@ -46,8 +46,8 @@ def file_check(mode, filename, model_name="", neural_network={}):
 
     if os.path.exists(filename):
         data = np.loadtxt(filename, float)
-        input_info = data[0:-1][..., 0:-1]
-        target = data[0:-1][..., [-1]]
+        input_info = data[1:-1][..., 0:-1]
+        target = data[1:-1][..., [-1]]
         input_len = len(input_info[0])
         output_len = 1
         data_num = len(input_info)
@@ -65,8 +65,8 @@ def dir_train(dir_name, model_name):
             for filename in filenames :
                 print filename
                 data = np.loadtxt(os.path.join(dir_name, filename), float)
-                input_info = data[0:][...,0:-1]
-                target = data[0:][...,[-1]]
+                input_info = data[1:][..., 0:-1]
+                target = data[1:][..., [-1]]
                 data_num = len(data)
                 if flag:
                     flag = False
@@ -89,7 +89,7 @@ def dir_check(mode, dir_name, model_name="", neural_network={}):
         model_file = file(model_name, "rb")
         model_str = pickle.load(model_file)
         neural_network = pickle.loads(model_str)
-    else :
+    else:
         print "Invalid parameter"
         sys.exit()
 
@@ -97,15 +97,15 @@ def dir_check(mode, dir_name, model_name="", neural_network={}):
         for parent, dirnames, filenames in os.walk(dir_name) :
             for filename in filenames :
                 data = np.loadtxt(os.path.join(dir_name, filename), float)
-                input_info = data[0:-1][..., 0:-1]
-                target = data[0:-1][..., [-1]]
+                input_info = data[1:-1][..., 0:-1]
+                target = data[1:-1][..., [-1]]
                 input_len = len(input_info[0])
                 output_len = 1
                 data_num = len(input_info)
 
                 ds = SupervisedDataSet(input_len, output_len)
                 for i in range(data_num):
-                    ds.addSample(input_info[i],0)
+                    ds.addSample(input_info[i], 0)
                 print neural_network.activateOnDataset(ds)
     else:
         print "Invalid directory name."

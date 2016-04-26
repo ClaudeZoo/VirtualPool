@@ -23,7 +23,7 @@ class MonitorTCPHandler(SocketServer.BaseRequestHandler):
                     self.pid = get_vm_pid(request_dict['vm_uuid'])
                     log_thread = LogThread(request_dict['vm_uuid'], self.thread_set, self.pid)
                     log_thread.start()
-                    
+                    self.request.sendall(str(dict(result="success")))
             elif request_dict['type'] == "end":
                 self.thread_set.remove(request_dict['vm_uuid'])
                 self.request.sendall(str(dict(result='success')))
@@ -36,7 +36,7 @@ class MonitorTCPHandler(SocketServer.BaseRequestHandler):
                     else:
                         neural_network = {}
                     if neural_network != {}:
-                        data_file_name = '%s-%s.txt' % (request_dict['vm_uuid'][:8], get_vm_pid(request_dict['vm_uuid']))
+                        data_file_name = '%s-%s' % (request_dict['vm_uuid'][:8], get_vm_pid(request_dict['vm_uuid']))
                         print data_file_name
                         if path.exists(data_file_name):
                             data_file = np.loadtxt(data_file_name, int)
@@ -75,7 +75,7 @@ class LogThread(Thread):
         self.vm_uuid = vm_uuid
         self.pid = pid
         self.thread_set = thread_set
-        self.log_file_name = path.join(getcwd(), '%s-%s.txt' % (self.vm_uuid[:8], self.pid))
+        self.log_file_name = path.join(getcwd(), '%s-%s' % (self.vm_uuid[:8], self.pid))
         self.command = 'cat /proc/%s/statm | cut -d " " -f 1,2,3,6' % self.pid
         self.command_2 = 'cat /proc/%s/stat | cut -d " " -f 10,14,15' % self.pid
 
@@ -85,7 +85,12 @@ class LogThread(Thread):
         os.remove(self.log_file_name)
 
     def write_log(self):
-        data = shell(self.command)[0].strip('\n') + ' ' + shell(self.command_2)[0].strip('\n')
+        data_str_list = shell(self.command)[0].strip('\n') + ' ' + shell(self.command_2)[0].strip('\n').split()
+        data = ""
+        log = open(self.log_file_name, 'r')
+        first_data_str_list = log.readline().split()
+        for i in range(len(data_str_list)):
+            data += (str(int(data_str_list[i]) - int(first_data_str_list[i])) + " ")
         shell('echo %s >> %s' % (data, self.log_file_name))
 
 

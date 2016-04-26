@@ -40,7 +40,7 @@ def directory_supplement(input_directory, output_directory):
     if os.path.exists(input_directory):
         for parent, dirnames, filenames in os.walk(input_directory):
             for filename in filenames:
-                output_filename = filename[:-4] + "-out"
+                output_filename = filename + "-out"
                 data = get_data(os.path.join(parent, filename))
                 output_filepath = os.path.join(output_directory, output_filename)
                 output_file = open(output_filepath, "w")
