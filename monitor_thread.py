@@ -87,16 +87,16 @@ class LogThread(Thread):
     def write_log(self):
         data_str = shell(self.command)[0].strip('\n') + ' ' + shell(self.command_2)[0].strip('\n')
         data_str_list = data_str.split()
-        data = ""
         if os.path.isfile(self.log_file_name):
             log = open(self.log_file_name, 'r')
             first_data_str_list = log.readline().split()
             log.close()
+            data = ""
             for i in range(len(data_str_list)):
                 data += (str(int(data_str_list[i]) - int(first_data_str_list[i])) + " ")
             shell('echo %s >> %s' % (data, self.log_file_name))
         else:
-            shell('echo %s >> %s' % (data, self.log_file_name))
+            shell('echo %s >> %s' % (data_str, self.log_file_name))
 
 
 def get_vm_pid(uuid):
