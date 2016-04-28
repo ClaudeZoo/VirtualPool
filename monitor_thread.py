@@ -85,7 +85,7 @@ class LogThread(Thread):
         os.remove(self.log_file_name)
 
     def write_log(self):
-        data_str_list = shell(self.command)[0].strip('\n') + ' ' + shell(self.command_2)[0].strip('\n').split()
+        data_str_list = (shell(self.command)[0].strip('\n') + ' ' + shell(self.command_2)[0].strip('\n')).split()
         data = ""
         log = open(self.log_file_name, 'r')
         first_data_str_list = log.readline().split()
