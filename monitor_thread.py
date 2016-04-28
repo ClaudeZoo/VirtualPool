@@ -82,16 +82,21 @@ class LogThread(Thread):
     def run(self):
         while self.vm_uuid in self.thread_set:
             Timer(0.1, self.write_log).run()
-        os.remove(self.log_file_name)
+        #os.remove(self.log_file_name)
 
     def write_log(self):
-        data_str_list = (shell(self.command)[0].strip('\n') + ' ' + shell(self.command_2)[0].strip('\n')).split()
+        data_str = shell(self.command)[0].strip('\n') + ' ' + shell(self.command_2)[0].strip('\n')
+        data_str_list = data_str.split()
         data = ""
-        log = open(self.log_file_name, 'r')
-        first_data_str_list = log.readline().split()
-        for i in range(len(data_str_list)):
-            data += (str(int(data_str_list[i]) - int(first_data_str_list[i])) + " ")
-        shell('echo %s >> %s' % (data, self.log_file_name))
+        if os.path.isfile(self.log_file_name):
+            log = open(self.log_file_name, 'r')
+            first_data_str_list = log.readline().split()
+            log.close()
+            for i in range(len(data_str_list)):
+                data += (str(int(data_str_list[i]) - int(first_data_str_list[i])) + " ")
+            shell('echo %s >> %s' % (data, self.log_file_name))
+        else:
+            shell('echo %s >> %s' % (data, self.log_file_name))
 
 
 def get_vm_pid(uuid):
