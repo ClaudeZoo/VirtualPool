@@ -3,10 +3,36 @@ import SocketServer
 import pickle
 import numpy as np
 import os
+import re
 from threading import Thread, Timer
 from os import getcwd, path
 from operation.use_shell import shell
-from settings import MY_IP, MONITOR_PORT, MODAL_NAME
+from settings import MY_IP, MONITOR_PORT, LOG_PATH
+
+
+re.compile(r"\[.*\]")
+
+
+def analyse_log(uuid):
+    log = open(log_name(uuid))
+    lines = log.readlines()
+    if len(lines) > 2:
+        info = lines[-2]
+    else:
+        info = ""
+    log.close()
+    return len(lines), info
+
+
+def log_file_exist(uuid):
+    if path.exists(log_name(uuid)):
+        return True
+    else:
+        return False
+
+
+def log_name(uuid):
+    return LOG_PATH + uuid + '.log'
 
 
 class MonitorTCPHandler(SocketServer.BaseRequestHandler):
@@ -17,45 +43,22 @@ class MonitorTCPHandler(SocketServer.BaseRequestHandler):
         request_dict = eval(self.request.recv(1024).strip())
         if 'type' in request_dict and 'vm_uuid' in request_dict:
             print request_dict
-            if request_dict['type'] == "start":
-                if 'vm_uuid' in request_dict:
-                    self.thread_set.add(request_dict['vm_uuid'])
-                    self.pid = get_vm_pid(request_dict['vm_uuid'])
-                    log_thread = LogThread(request_dict['vm_uuid'], self.thread_set, self.pid)
-                    log_thread.start()
-                    self.request.sendall(str(dict(result="success")))
-            elif request_dict['type'] == "end":
-                self.thread_set.remove(request_dict['vm_uuid'])
-                self.request.sendall(str(dict(result='success')))
-            elif request_dict['type'] == "query":
-                if 'vm_uuid' in request_dict:
-                    if path.exists(MODAL_NAME):
-                        model_file = file(MODAL_NAME, "rb")
-                        model_str = pickle.load(model_file)
-                        neural_network = pickle.loads(model_str)
+            uuid = request_dict['vm_uuid']
+            if request_dict['type'] == 'query':
+                if log_file_exist(uuid):
+                    rate, info = analyse_log(uuid)
+                    if rate == 0:
+                        self.request.sendall(str(dict(result='success', state='pre_kernel')))
                     else:
-                        neural_network = {}
-                    if neural_network != {}:
-                        data_file_name = '%s-%s' % (request_dict['vm_uuid'][:8], get_vm_pid(request_dict['vm_uuid']))
-                        print data_file_name
-                        if path.exists(data_file_name):
-                            data_file = np.loadtxt(data_file_name, int)
-                            last_line_data = data_file[-1]
-                            print last_line_data
-                            result = neural_network.activate(last_line_data)
-                            self.request.sendall(str(dict(result='success', process=result[0])))
-                        else:
-                            self.request.sendall(str(dict(result='cannot find the log.')))
-                    else:
-                        self.request.sendall(str(dict(result='model file not found')))
+                        self.request.sendall(str(dict(result='success', state='kernel', rate=rate, info=info)))
+            elif request_dict['type'] == 'stop':
+                if log_file_exist(uuid):
+                    os.remove(log_name(uuid))
+                    self.request.sendall(str(dict(result='success')))
                 else:
-                    self.request.sendall(str(dict(result='Invalid request')))
+                    self.request.sendall(str(dict(result='failed')))
             else:
-                response_dict = dict(result="Invalid type")
-                self.request.sendall(str(response_dict))
-        else:
-            response_dict = dict(result="illegal")
-            self.request.sendall(str(response_dict))
+                self.request.sendall(str(dict(result='illegal')))
 
 
 class MonitorThread(Thread):

@@ -10,7 +10,7 @@ from pybrain.supervised.trainers import BackpropTrainer
 
 def output_model(ds, model_name, input_len, output_len):
     model_file = file(model_name, "wb")
-    neural_network = buildNetwork(input_len, 500, output_len, bias=True)
+    neural_network = buildNetwork(input_len, 20, output_len, bias=True)
     trainer = BackpropTrainer(neural_network, ds, weightdecay=0.1, learningrate=0.0001)
     trainer.trainEpochs(epochs=100)
     model_str = pickle.dumps(neural_network)
@@ -24,7 +24,7 @@ def file_train(filename, model_name):
     target = data[1:][..., [-1]]
     input_len = len(input_info[0])
     output_len = 1
-    data_num = len(input_info)
+    data_num = len(input_info) - 1
     ds = SupervisedDataSet(input_len, output_len)
     for i in range(data_num):
         ds.addSample(input_info[i], target[i])
@@ -50,7 +50,7 @@ def file_check(mode, filename, model_name="", neural_network={}):
         target = data[1:-1][..., [-1]]
         input_len = len(input_info[0])
         output_len = 1
-        data_num = len(input_info)
+        data_num = len(input_info) - 1
 
         ds = SupervisedDataSet(input_len, output_len)
         for i in range(data_num):
@@ -67,7 +67,7 @@ def dir_train(dir_name, model_name):
                 data = np.loadtxt(os.path.join(dir_name, filename), float)
                 input_info = data[1:][..., 0:-1]
                 target = data[1:][..., [-1]]
-                data_num = len(data)
+                data_num = len(data) - 1
                 if flag:
                     flag = False
                     input_len = len(input_info[0])
@@ -101,7 +101,7 @@ def dir_check(mode, dir_name, model_name="", neural_network={}):
                 target = data[1:-1][..., [-1]]
                 input_len = len(input_info[0])
                 output_len = 1
-                data_num = len(input_info)
+                data_num = len(input_info) - 1
 
                 ds = SupervisedDataSet(input_len, output_len)
                 for i in range(data_num):

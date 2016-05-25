@@ -2,11 +2,13 @@
 import re
 import string
 import random
-from operation.use_shell import shell
-from operation.modify import modify_vm_memory
-import send_socket
 from os import getcwd
 from os import path
+from operation.use_shell import shell
+from operation.modify import modify_vm_memory
+from settings import LOG_PATH
+import send_socket
+
 
 
 def random_str(random_length=8):  # 获取8位随机虚拟机名字
@@ -48,6 +50,7 @@ def new_vm_exec(reply_dict):
         shell('vboxmanage sharedfolder add %s --name %s --hostpath %s --readonly --automount'
               % (uuid, uuid, folder_path))
         shell('vboxmanage modifyvm %s --natpf1 "guestssh,tcp,,%s,,22"' % (uuid, port))
+        shell('vboxmanage modifyvm %s --uart1 0x3F8 4 --uartmode1 file %s%s.log' % (uuid, LOG_PATH, uuid))
         reply_dict["request_result"] = "success"
         reply_dict["vm_name"] = new_vm_name
         reply_dict["vm_username"] = "ubuntu-user"
