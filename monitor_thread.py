@@ -17,7 +17,10 @@ def analyse_log(uuid):
     log = open(log_name(uuid))
     lines = log.readlines()
     if len(lines) > 2:
-        info = lines[-2]
+        if len(lines) > 348:
+            info = lines[347]
+        else:
+            info = lines[-2]
     else:
         info = ""
     log.close()
