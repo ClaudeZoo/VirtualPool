@@ -2,13 +2,10 @@
 import re
 import string
 import random
-from os import getcwd
-from os import path
 from operation.use_shell import shell
 from operation.modify import modify_vm_memory
-from settings import LOG_PATH
+from settings import *
 import send_socket
-
 
 
 def random_str(random_length=8):  # 获取8位随机虚拟机名字
@@ -19,8 +16,8 @@ def new_vm(request):
     # 处理新建虚拟机请求,准备需要返回的基本数据
     request_dict = eval(request)
     reply_dict = {"request_id": request_dict["request_id"], "request_type": request_dict["request_type"],
-                  "request_userid": request_dict["request_userid"], "port": request_dict["port"], 
-                  "request_memory":request_dict["request_memory"]}
+                  "request_userid": request_dict["request_userid"], "port": request_dict["port"],
+                  "request_memory": request_dict["request_memory"]}
     new_vm_exec(reply_dict)
     print(reply_dict)
     send_socket.send_reply(reply_dict)
@@ -33,8 +30,8 @@ def new_vm_exec(reply_dict):
     command = "vboxmanage clonevm %s --name %s --register" % (original_vm_name, new_vm_name)
     result_error_tuple = shell(command)
 
-    if result_error_tuple[1] != None:  # 如果返回错误结果
-        reply_dict["request_result"] = "execution_error"
+    if result_error_tuple[1]:  # 如果返回错误结果
+        reply_dict["request_result"] = EXECUTION_ERROR
         reply_dict["error_information"] = result_error_tuple[1]
 
     else:
@@ -51,11 +48,11 @@ def new_vm_exec(reply_dict):
               % (uuid, uuid, folder_path))
         shell('vboxmanage modifyvm %s --natpf1 "guestssh,tcp,,%s,,22"' % (uuid, port))
         shell('vboxmanage modifyvm %s --uart1 0x3F8 4 --uartmode1 file %s%s.log' % (uuid, LOG_PATH, uuid))
-        reply_dict["request_result"] = "success"
+        reply_dict["request_result"] = RESULT_SUCCESS
         reply_dict["vm_name"] = new_vm_name
         reply_dict["vm_username"] = "ubuntu-user"
         reply_dict["vm_uuid"] = uuid_match.group(1)
-        
+
 
 if __name__ == '__main__':
     shell('vboxmanage sharedfolder add ubuntu-sample --name hehe --hostpath ./empty --readonly --automount')
