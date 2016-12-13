@@ -2,6 +2,7 @@
 import re
 from use_shell import shell
 import time
+from settings import *
 
 
 def get_vm_state(uuid):
@@ -15,10 +16,10 @@ def get_vm_state(uuid):
 def execute_command(command, reply_dict):
     std_tuple = shell(command)
     if std_tuple[1] != None:
-        reply_dict["request_result"] = "execution_error"
+        reply_dict["request_result"] = EXECUTION_ERROR
         reply_dict["error_information"] = std_tuple[1]
     else:
-        reply_dict["request_result"] = "success"
+        reply_dict["request_result"] = RESULT_SUCCESS
 
 
 def start_vm(reply_dict):
@@ -26,17 +27,15 @@ def start_vm(reply_dict):
     uuid = reply_dict["vm_uuid"]
     vm_state = get_vm_state(uuid)
     if (vm_state != 'running') and (vm_state != 'paused'):
-        command = "vboxmanage startvm %s --type headless" % uuid
+        command = "vboxmanage startvm %s " % uuid  # --type headless
         stdout_stderr_tuple = shell(command)
-        if stdout_stderr_tuple[1] != None:
-            reply_dict["request_result"] = "execution_error"
+        if stdout_stderr_tuple[1]:
+            reply_dict["request_result"] = EXECUTION_ERROR
             reply_dict["error_information"] = stdout_stderr_tuple[1]
         else:
-            reply_dict["request_result"] = "success"
-            reply_dict["error_information"] = ""
-            return reply_dict
+            reply_dict["request_result"] = RESULT_SUCCESS
     else:
-        reply_dict["request_result"] = "request_error"
+        reply_dict["request_result"] = REQUEST_ERROR
         reply_dict["error_information"] = "The virtual machine is already running"
 
 
@@ -53,7 +52,7 @@ def start_end_vm(reply_dict):
             break
         else:
             time.sleep(1)
-    reply_dict["request_result"] = "success"
+    reply_dict["request_result"] = RESULT_SUCCESS
     reply_dict["vm_ip"] = ip_match.group(1)
     reply_dict["vm_username"] = "username"
 
@@ -66,7 +65,7 @@ def shutdown_vm(reply_dict):
         command = "vboxmanage controlvm %s acpipowerbutton" % uuid
         execute_command(command, reply_dict)
     else:
-        reply_dict["request_result"] = "request_error"
+        reply_dict["request_result"] = REQUEST_ERROR
         reply_dict["error_information"] = "Virtual machine in invalid state: %s" % vm_state
 
 
@@ -78,7 +77,7 @@ def savestate_vm(reply_dict):
         command = "vboxmanage controlvm %s savestate" % uuid
         execute_command(command, reply_dict)
     else:
-        reply_dict["request_result"] = "request_error"
+        reply_dict["request_result"] = REQUEST_ERROR
         reply_dict["error_information"] = "Virtual machine in invalid state: %s" % vm_state
 
 
@@ -106,7 +105,7 @@ def delete_vm(reply_dict):
         command = "vboxmanage unregistervm %s --delete" % uuid
         execute_command(command, reply_dict)
     else:
-        reply_dict["request_result"] = "request_error"
+        reply_dict["request_result"] = REQUEST_ERROR
         reply_dict["error_information"] = "Virtual machine in invalid state: %s" % vm_state
 
 
@@ -119,6 +118,7 @@ def control_vm(request):
         start_end_vm(reply_dict)
     elif control_type == "shutdown":
         shutdown_vm(reply_dict)
+        time.sleep(2)
     elif control_type == "savestate":
         savestate_vm(reply_dict)
     elif control_type == "add_nat_rule":

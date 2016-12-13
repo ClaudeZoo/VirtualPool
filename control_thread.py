@@ -4,11 +4,12 @@ import threading
 import Queue
 from operationQueue import de_queue
 from operation.control import control_vm
-from settings import MY_ADDRESS
-from settings import MY_PORT
+from operation.network import handle_network_request
+from settings import MY_IP
+from settings import CONTROL_PORT
 
 
-class MyTCPHandler(SocketServer.BaseRequestHandler):
+class ControlTCPHandler(SocketServer.BaseRequestHandler):
     # 继承BaseRequestHandler类, 监听端口并处理请求
     vm_set = set()
     user_dict = dict()
@@ -24,8 +25,8 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         response['request_type'] = request_type
         response['request_userid'] = request_user
         if request_type == 'new':  # 根据请求类型来转发请求, 目前只有新建虚拟机(new)采用异步方式
-            if request_user not in self.user_dict:
-                self.user_dict[request_user] = Queue.Queue(maxsize=20)  # 每个用户最多同时执行20个新建请求
+            if request_user not in self.user_dict: # 如果当前没有该用户的队列
+                self.user_dict[request_user] = Queue.Queue(maxsize=10)  # 每个用户最多同时执行20个新建请求
             if self.user_dict[request_user].full():
                 response['request_response'] = "rejected"
                 self.request.sendall(str(response))
@@ -38,6 +39,9 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
                     if de_queue(self.user_dict[request_user]) == "done":  # 处理请求队列直至结束
                         del self.running_queue_dict[request_user]
                         del self.user_dict[request_user]
+        elif request_type == 'network':
+            handle_network_request(data_dict, response)
+            self.request.sendall(str(response))
         else:
             request_vm_uuid = data_dict['vm_uuid']
             if request_vm_uuid in self.vm_set:  # 每台虚拟机只能同时执行一个请求
@@ -50,21 +54,10 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
             self.request.sendall(str(response))
 
 
-class ServerThread(threading.Thread):
+class ControlThread(threading.Thread):
+    def __init__(self):
+        super(ControlThread, self).__init__()
+        self.tcp_server = SocketServer.ThreadingTCPServer((MY_IP, CONTROL_PORT), ControlTCPHandler)
+
     def run(self):
-        server = SocketServer.ThreadingTCPServer((MY_ADDRESS, MY_PORT), MyTCPHandler)
-        server.serve_forever()
-
-
-class PrintThread(threading.Thread):
-    # 测试多线程
-    def run(self):
-        print("hello world")
-
-
-if __name__ == '__main__':
-    # 程序入口
-    thread1 = ServerThread()
-    thread2 = PrintThread()
-    thread1.start()
-    thread2.start()
+        self.tcp_server.serve_forever()
