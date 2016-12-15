@@ -1,3 +1,4 @@
+# coding: utf-8
 import re
 from use_shell import shell, guest_shell
 from settings import *
@@ -15,7 +16,7 @@ IF_FILES = [path.join(BASE_PATH, "0", "interfaces"), path.join(BASE_PATH, "1", "
 IF_NAMES = ["eth0", "eth1", "eth2", "eth3"]
 
 
-def add_intnet(name, ip, netmask, lower_ip, upper_ip):
+def create_intnet(name, ip, netmask, lower_ip, upper_ip):
     command = "vboxmanage dhcpserver add --netname %s --ip %s --netmask %s --lowerip %s --upperip %s  --enable" \
               % (name, ip, netmask, lower_ip, upper_ip)
     return shell(command)
@@ -28,6 +29,7 @@ def delete_intnet(name):
 
 def add_vm_to_intnet(vm_name, if_no, if_code, net_name):
     command = "vboxmanage controlvm %s nic%s intnet %s" % (vm_name, if_no + 1, net_name)
+    # if_no + 1 的原因：nic1 对应 eth0, nic2 对应 eth1，以此类推
     shell(command)
     replace_interface_file(vm_name, IF_FILES[if_code])
     return guest_shell(vm_name, IFUP_PATH, "ifup %s" % IF_NAMES[if_no])
@@ -40,7 +42,7 @@ def remove_vm_from_network(vm_name, if_no, if_code):
     return shell(command)
 
 
-def add_hostonlyif(ip, netmask, lower_ip, upper_ip):
+def create_hostonlyif(ip, netmask, lower_ip, upper_ip):
     command = "vboxmanage hostonlyif create"
     result_error_tuple = shell(command)
     if not result_error_tuple[1]:
@@ -82,9 +84,8 @@ def replace_interface_file(vm_name, if_file):
 def handle_network_request(data_dict, response_dict):
     print(data_dict)
     operation_type = data_dict["operation_type"]
-    result_error_tuple = None
     if operation_type == CREATE_INTNET:
-        result_error_tuple = add_intnet(data_dict["net_name"], data_dict["ip"], data_dict["netmask"],
+        result_error_tuple = create_intnet(data_dict["net_name"], data_dict["ip"], data_dict["netmask"],
                                         data_dict["lower_ip"], data_dict["upper_ip"])
     elif operation_type == DELETE_INTNET:
         result_error_tuple = delete_intnet(data_dict["net_name"])
@@ -93,15 +94,18 @@ def handle_network_request(data_dict, response_dict):
                                               data_dict["net_name"])
 
     elif operation_type == CREATE_HOSTONLY:
-        pass
+        result_error_tuple = create_hostonlyif(data_dict["ip"], data_dict["netmask"], data_dict["lower_ip"],
+                                               data_dict["upper_ip"])
+        response_dict["net_name"] = result_error_tuple[0]
     elif operation_type == DELETE_HOSTONLY:
-        pass
+        result_error_tuple = delete_hostonlyif(data_dict["name"])
     elif operation_type == ADD_VM_TO_HOSTONLY:
-        pass
+        result_error_tuple = add_vm_to_hostonlyif(data_dict["vm_name"], data_dict["if_no"], data_dict["if_code"],
+                                                  data_dict["net_name"])
     elif operation_type == REMOVE_VM_FROM_NETWORK:
         result_error_tuple = remove_vm_from_network(data_dict["vm_name"], data_dict["if_no"], data_dict["if_code"])
     else:
-        pass
+        result_error_tuple = None, "Invalid Network Request Type"
 
     if result_error_tuple[1]:
         response_dict["request_result"] = EXECUTION_ERROR
