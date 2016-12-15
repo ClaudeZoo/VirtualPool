@@ -53,7 +53,7 @@ def create_hostonlyif(ip, netmask, lower_ip, upper_ip):
                       % (if_name, ip, netmask, lower_ip, upper_ip)
             result_error_tuple = shell(command)
             if not result_error_tuple[1]:
-                result_error_tuple[0] = if_name
+                result_error_tuple = if_name, None
             return result_error_tuple
         else:
             return None, "Regex Error"
