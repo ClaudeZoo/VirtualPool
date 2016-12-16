@@ -9,6 +9,6 @@ def shell(command):  # 执行脚本 返回脚本的返回值
 
 
 def guest_shell(vm_name, bin_path, command):
-    host_command = "vboxmanage guestcontrol %s run --exe %s --username %s --password %s -- %s" \
+    host_command = "vboxmanage guestcontrol %s exec --image %s --username %s --password %s -- %s" \
                    % (vm_name, bin_path, GUEST_OS_ADMIN, GUEST_OS_PASSWD, command)
     return shell(host_command)
