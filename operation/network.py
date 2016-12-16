@@ -76,7 +76,7 @@ def add_vm_to_hostonlyif(vm_name, if_no, if_code, net_name):
 
 
 def replace_interface_file(vm_name, if_file):
-    command = "vboxmanage guestcontrol %s  copyto %s  /etc/network/ --username %s --password %s" \
+    command = "vboxmanage guestcontrol %s  copyto %s  /etc/network/interfaces --username %s --password %s" \
               % (vm_name, if_file, GUEST_OS_ADMIN, GUEST_OS_PASSWD)
     return shell(command)
 
