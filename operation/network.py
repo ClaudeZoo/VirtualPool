@@ -98,7 +98,7 @@ def handle_network_request(data_dict, response_dict):
                                                data_dict["upper_ip"])
         response_dict["net_name"] = result_error_tuple[0]
     elif operation_type == DELETE_HOSTONLY:
-        result_error_tuple = delete_hostonlyif(data_dict["name"])
+        result_error_tuple = delete_hostonlyif(data_dict["net_name"])
     elif operation_type == ADD_VM_TO_HOSTONLY:
         result_error_tuple = add_vm_to_hostonlyif(data_dict["vm_name"], data_dict["if_no"], data_dict["if_code"],
                                                   data_dict["net_name"])
